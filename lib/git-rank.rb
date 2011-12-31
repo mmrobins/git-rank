@@ -121,58 +121,71 @@ module GitRank
     `git log -M -C -C -w --no-color --numstat`
   end
 
-  def calculate_rank(options)
-    git_head = git_head_or_exit
-
-    cached_data_dir = File.expand_path("~/.git_rank/#{git_head}")
-    FileUtils.mkdir_p(cached_data_dir)
-
-    # only count the options that affect line counts
-    options_digest = Digest::MD5.hexdigest(options[:exline].to_s + options[:additions_only].to_s + options[:deletions_only].to_s)
+  def calculate_rank_by_blame(options = {})
+    options[:exline] ||= []
 
     authors = Hash.new {|h, k| h[k] = h[k] = Hash.new(0)}
+    options_digest = Digest::MD5.hexdigest(options[:exline].to_s)
 
-    if options[:blame]
-      cache_file = File.join(cached_data_dir, "blame_" + options_digest)
-      authors = retrieve_cached_author_data(cache_file) || authors
-      return authors unless authors.empty?
-      files = get_files_to_blame
+    cache_file = File.join(cached_data_dir, "blame_" + options_digest)
+    authors = retrieve_cached_author_data(cache_file) || authors
+    return authors unless authors.empty?
 
-      files.each do |file|
-        lines = blame_file(file)
-        lines.each do |line|
-          next if options[:exline].any? { |exline| line =~ /#{exline}/ }
+    get_files_to_blame.each do |file|
+      lines = blame_file(file)
+      lines.each do |line|
+        next if options[:exline].any? { |exline| line =~ /#{exline}/ }
 
-          line =~ / \((.*?)\d/
-          raise line unless $1
-          authors[$1.strip][file] += 1
-        end
+        line =~ / \((.*?)\d/
+        raise line unless $1
+        authors[$1.strip][file] += 1
       end
-      save_cached_author_data(authors, cache_file)
+    end
+    save_cached_author_data(authors, cache_file)
+    authors
+  end
+
+  def calculate_rank_by_log(options = {})
+    authors = Hash.new {|h, k| h[k] = h[k] = Hash.new(0)}
+    options_digest = Digest::MD5.hexdigest(options[:additions_only].to_s + options[:deletions_only].to_s)
+
+    cache_file = File.join(cached_data_dir, "log_" + options_digest)
+    authors = retrieve_cached_author_data(cache_file) || authors
+    return authors unless authors.empty?
+
+    author = nil
+    file = nil
+    state = :pre_author
+    git_log.each do |line|
+      case
+      when (state == :pre_author || state == :post_author) && line =~ /Author: (.*)\s</
+        author = $1
+        state = :post_author
+      when line =~ /^(\d+)\s+(\d+)\s+(.*)/
+        additions = $1.to_i
+        deletions = $2.to_i
+        file = $3
+        authors[author][file] += (additions + deletions)
+        state = :in_diff
+      when state == :in_diff && line =~ /^commit /
+        state = :pre_author
+      end
+    end
+    save_cached_author_data(authors, cache_file)
+    authors
+  end
+
+  def cached_data_dir
+    cached_data_dir = File.expand_path("~/.git_rank/#{git_head_or_exit}")
+    FileUtils.mkdir_p(cached_data_dir)
+    cached_data_dir
+  end
+
+  def calculate_rank(options = {})
+    authors = if options[:blame]
+      calculate_rank_by_blame(options)
     else
-      cache_file = File.join(cached_data_dir, "log_" + options_digest)
-      authors = retrieve_cached_author_data(cache_file) || authors
-      return authors unless authors.empty?
-
-      author = nil
-      file = nil
-      state = :pre_author
-      git_log.each do |line|
-        case
-        when (state == :pre_author || state == :post_author) && line =~ /Author: (.*)\s</
-          author = $1
-          state = :post_author
-        when line =~ /^(\d+)\s+(\d+)\s+(.*)/
-          additions = $1.to_i
-          deletions = $2.to_i
-          file = $3
-          authors[author][file] += (additions + deletions)
-          state = :in_diff
-        when state == :in_diff && line =~ /^commit /
-          state = :pre_author
-        end
-      end
-      save_cached_author_data(authors, cache_file)
+      calculate_rank_by_log(options)
     end
     authors
   end
@@ -196,7 +209,10 @@ module GitRank
     puts "#{author_name}#{' ' * (padding_size - author_name.size)} #{total}"
   end
 
-  def print_rank(authors, options)
+  def print_rank(authors, options = {})
+    options[:exfile] ||= []
+    options[:exauthor] ||= []
+
     authors = delete_excluded_files(authors, options[:exfile])
     if options[:author] and !options[:all_authors]
       options[:author].each do |author_name|
