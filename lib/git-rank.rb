@@ -91,9 +91,23 @@ module GitRank
     options
   end
 
-  def calculate_rank(options)
+  def git_head_or_exit
     git_head = `git rev-parse HEAD`.chomp
     exit unless $?.exitstatus == 0
+  end
+
+  def save_cached_author_data(data, file)
+    File.open(file, 'w') do |f|
+      f.puts data.to_yaml
+    end
+  end
+
+  def retrieve_cached_author_data(file)
+    YAML::load( File.open(file) ) if File.exist? file
+  end
+
+  def calculate_rank(options)
+    git_head = git_head_or_exit
 
     cached_data_dir = File.expand_path("~/.git_rank/#{git_head}")
     FileUtils.mkdir_p(cached_data_dir)
@@ -104,66 +118,57 @@ module GitRank
     authors = Hash.new {|h, k| h[k] = h[k] = Hash.new(0)}
 
     if options[:blame]
-      cached_author_data = File.join(cached_data_dir, "blame_" + options_digest)
-      if File.exist? cached_author_data
-        authors = YAML::load( File.open(cached_author_data) )
-      else
-        files = Dir.glob("**/*").reject { |f| !File.file? f or f =~ /\.git/ or File.binary? f }
+      authors = retrieve_cached_author_data(cache_file) || authors
+      return unless authors.empty?
+      files = Dir.glob("**/*").reject { |f| !File.file? f or f =~ /\.git/ or File.binary? f }
 
-        files.each do |file|
-          lines = `git blame -w #{file}`
+      files.each do |file|
+        lines = `git blame -w #{file}`
 
-          puts "git blame failed on #{file}" unless $?.exitstatus == 0
+        puts "git blame failed on #{file}" unless $?.exitstatus == 0
 
-          lines.each do |line|
-            next if options[:exline].any? { |exline| line =~ /#{exline}/ }
+        lines.each do |line|
+          next if options[:exline].any? { |exline| line =~ /#{exline}/ }
 
-            line =~ / \((.*?)\d/
-            raise line unless $1
-            authors[$1.strip][file] += 1
-          end
+          line =~ / \((.*?)\d/
+          raise line unless $1
+          authors[$1.strip][file] += 1
         end
       end
-      File.open(cached_author_data, 'w') do |f|
-        f.puts authors.to_yaml
-      end
+      save_cached_author_data(authors, cache_file)
     else
-      cached_author_data = File.join(cached_data_dir, "log_" + options_digest)
-      if File.exist? cached_author_data
-        authors = YAML::load( File.open(cached_author_data) )
+      cache_file = File.join(cached_data_dir, "log_" + options_digest)
+      authors = retrieve_cached_author_data(cache_file) || authors
+      return unless authors.empty?
+      if options[:additions_only]
+        regex = /^[\+]/
+        words = "lines added"
+      elsif options[:deletions_only]
+        regex = /^[\-]/
+        words = "lines deleted"
       else
-        if options[:additions_only]
-          regex = /^[\+]/
-          words = "lines added"
-        elsif options[:deletions_only]
-          regex = /^[\-]/
-          words = "lines deleted"
-        else
-          regex = /^[\+\-]/
-          words = "lines of diff"
-        end
+        regex = /^[\+\-]/
+        words = "lines of diff"
+      end
 
-        author = nil
-        file = nil
-        state = :pre_author
-        `git log -M -C -C -p -w --no-color`.each do |line|
-          case
-          when (state == :pre_author || state == :post_author) && line =~ /Author: (.*)\s</
-            author = $1
-            state = :post_author
-          when state == :post_author && line =~ /^\+\+\+ b\/(.*)/
-            file = $1
-            state = :in_diff
-          when state == :in_diff && line =~ regex
-            authors[author][file] += 1
-          when state == :in_diff && line =~ /^commit /
-            state = :pre_author
-          end
+      author = nil
+      file = nil
+      state = :pre_author
+      `git log -M -C -C -p -w --no-color`.each do |line|
+        case
+        when (state == :pre_author || state == :post_author) && line =~ /Author: (.*)\s</
+          author = $1
+          state = :post_author
+        when state == :post_author && line =~ /^\+\+\+ b\/(.*)/
+          file = $1
+          state = :in_diff
+        when state == :in_diff && line =~ regex
+          authors[author][file] += 1
+        when state == :in_diff && line =~ /^commit /
+          state = :pre_author
         end
       end
-      File.open(cached_author_data, 'w') do |f|
-        f.puts authors.to_yaml
-      end
+      save_cached_author_data(authors, cache_file)
     end
     authors
   end
