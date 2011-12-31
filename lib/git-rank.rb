@@ -103,7 +103,22 @@ module GitRank
   end
 
   def retrieve_cached_author_data(file)
+    return nil
     YAML::load( File.open(file) ) if File.exist? file
+  end
+
+  def get_files_to_blame
+    Dir.glob("**/*").reject { |f| !File.file? f or f =~ /\.git/ or File.binary? f }
+  end
+
+  def blame_file(file)
+    lines = `git blame -w #{file}`.lines
+    puts "git blame failed on #{file}" unless $?.exitstatus == 0
+    lines
+  end
+
+  def git_log
+    `git log -M -C -C -w --no-color --numstat`
   end
 
   def calculate_rank(options)
@@ -118,15 +133,13 @@ module GitRank
     authors = Hash.new {|h, k| h[k] = h[k] = Hash.new(0)}
 
     if options[:blame]
+      cache_file = File.join(cached_data_dir, "blame_" + options_digest)
       authors = retrieve_cached_author_data(cache_file) || authors
-      return unless authors.empty?
-      files = Dir.glob("**/*").reject { |f| !File.file? f or f =~ /\.git/ or File.binary? f }
+      return authors unless authors.empty?
+      files = get_files_to_blame
 
       files.each do |file|
-        lines = `git blame -w #{file}`
-
-        puts "git blame failed on #{file}" unless $?.exitstatus == 0
-
+        lines = blame_file(file)
         lines.each do |line|
           next if options[:exline].any? { |exline| line =~ /#{exline}/ }
 
@@ -139,31 +152,22 @@ module GitRank
     else
       cache_file = File.join(cached_data_dir, "log_" + options_digest)
       authors = retrieve_cached_author_data(cache_file) || authors
-      return unless authors.empty?
-      if options[:additions_only]
-        regex = /^[\+]/
-        words = "lines added"
-      elsif options[:deletions_only]
-        regex = /^[\-]/
-        words = "lines deleted"
-      else
-        regex = /^[\+\-]/
-        words = "lines of diff"
-      end
+      return authors unless authors.empty?
 
       author = nil
       file = nil
       state = :pre_author
-      `git log -M -C -C -p -w --no-color`.each do |line|
+      git_log.each do |line|
         case
         when (state == :pre_author || state == :post_author) && line =~ /Author: (.*)\s</
           author = $1
           state = :post_author
-        when state == :post_author && line =~ /^\+\+\+ b\/(.*)/
-          file = $1
+        when line =~ /^(\d+)\s+(\d+)\s+(.*)/
+          additions = $1.to_i
+          deletions = $2.to_i
+          file = $3
+          authors[author][file] += (additions + deletions)
           state = :in_diff
-        when state == :in_diff && line =~ regex
-          authors[author][file] += 1
         when state == :in_diff && line =~ /^commit /
           state = :pre_author
         end
@@ -174,6 +178,7 @@ module GitRank
   end
 
   def delete_excluded_files(authors, excluded_files)
+    excluded_files ||= []
     authors.each do |author, line_counts|
       line_counts.each do |file, count|
         line_counts.delete(file) if excluded_files.any? {|ex| file =~ /^#{ex}/}
