@@ -1,0 +1,4 @@
+git-rank
+
+Use to rank contributors to a git project.  This can be done by blame lines for
+a current view of the project, or by log for a historical view.
