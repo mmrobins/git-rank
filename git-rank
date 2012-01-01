@@ -1,7 +1,9 @@
 #!/usr/bin/env ruby
 
 require 'git-rank'
+require 'git-rank/options'
+require 'git-rank/printer'
 
-options = GitRank.parse_options
-authors = GitRank.calculate_rank(options)
-GitRank.print_rank(authors, options)
+options = GitRank::Options.parse
+authors = GitRank.calculate(options)
+GitRank::Printer.print(authors, options)
