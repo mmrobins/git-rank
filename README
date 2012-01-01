@@ -1,4 +1,21 @@
 git-rank
 
-Use to rank contributors to a git project.  This can be done by blame lines for
-a current view of the project, or by log for a historical view.
+Use to rank contributors to a git project by lines of conribution.  This can be
+done by blame lines for a current view of the project, or by log for a
+historical view.  Includes options for breakdown by file, excluding authors and
+files and filtering lines by regex.
+
+# Installation
+
+For now copy the git-rank file to somewhere in your path and add git-rank/lib
+to your RUBYLIB to run from source.  If I get around to it or anyone cares I
+may take the time to get it installable as a gem, but I'm wondering if there's
+a more common way to extend git.
+
+# Usage
+
+See `git rank --help` for usage info
+
+# Credits
+
+Inspired by the git-rank-contributors script from http://git-wt-commit.rubyforge.org/git-rank-contributors
