@@ -12,6 +12,9 @@ module GitRank
           lines.each do |line|
             next if options[:exline].any? { |exline| line =~ /#{exline}/ }
 
+            # Get author info out of the line
+            # This will probably need improvements if people try to
+            # use this with weird names
             line =~ / \((.*?)\d/
             raise line unless $1
             authors[$1.strip][file] += 1

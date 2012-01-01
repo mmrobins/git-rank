@@ -1,25 +1,6 @@
 module GitRank
   module Printer
     class << self
-      def delete_excluded_files(authors, excluded_files)
-        excluded_files ||= []
-        authors.each do |author, line_counts|
-          line_counts.each do |file, count|
-            line_counts.delete(file) if excluded_files.any? {|ex| file =~ /^#{ex}/}
-          end
-        end
-      end
-
-      def print_author_breakdown(author_name, author_data, padding_size=nil)
-        padding_size ||= author_name.size
-        padding = ' ' * padding_size
-        total = author_data.values.sum
-        author_data.sort_by {|k, v| v }.each do |file, count|
-          puts "#{padding} #{count} #{file}"
-        end
-        puts "#{author_name}#{' ' * (padding_size - author_name.size)} #{total}"
-      end
-
       def print(authors, options = {})
         options[:exfile] ||= []
         options[:exauthor] ||= []
@@ -44,6 +25,27 @@ module GitRank
             if options[:all_authors]
               print_author_breakdown(author, line_counts, max_author)
             end
+          end
+        end
+      end
+
+      private
+
+      def print_author_breakdown(author_name, author_data, padding_size=nil)
+        padding_size ||= author_name.size
+        padding = ' ' * padding_size
+        total = author_data.values.sum
+        author_data.sort_by {|k, v| v }.each do |file, count|
+          puts "#{padding} #{count} #{file}"
+        end
+        puts "#{author_name}#{' ' * (padding_size - author_name.size)} #{total}"
+      end
+
+      def delete_excluded_files(authors, excluded_files)
+        excluded_files ||= []
+        authors.each do |author, line_counts|
+          line_counts.each do |file, count|
+            line_counts.delete(file) if excluded_files.any? {|ex| file =~ /^#{ex}/}
           end
         end
       end
