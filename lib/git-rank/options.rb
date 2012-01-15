@@ -1,3 +1,5 @@
+require 'optparse'
+
 module GitRank::Options
   def self.parse
     options = {}

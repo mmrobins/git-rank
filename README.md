@@ -7,13 +7,25 @@ files and filtering lines by regex.
 
 # Installation
 
-For now copy or symlink the git-rank file to somewhere in your path and add
-git-rank/lib to your RUBYLIB to run from source.
+The easiest way to install is to generate the standalone script and copy to
+somewhere in your PATH like ~/bin.
 
-Or you can build it as a gem yourself.  This is probably not recommended unless you're happy with the current functionality or are uncomfortable with modifying your PATH and RUBYLIB.  I'm not sure that shipping this as a gem is the right way to distribute it long term, as I'm guessing there may be a better way to add commands to git.  If you want the gem:
+    rake bundle &> /dev/null && cp git-rank $HOME/bin
 
-    gem build git-rank.gemspec
-    gem install git-rank-0.0.1.gem
+If you would like to run from source to make updates from git easier, symlink
+the bin/git-rank file to somewhere in your path and add git-rank/lib to your
+RUBYLIB to run from source.  This way if you update this repo, no further
+action is required to run the new code.
+
+    ln -s `pwd`/bin/git-rank $HOME/bin/git-rank && export RUBYLIB=`pwd`/lib:$RUBYLIB
+
+Or you can build it as a gem yourself.  This is probably not recommended unless
+you're happy with the current functionality or are uncomfortable with modifying
+your PATH and RUBYLIB.  I'm not sure that shipping this as a gem is the right
+way to distribute it long term, as I'm guessing there may be a better way to
+add commands to git.  If you want the gem:
+
+    gem build git-rank.gemspec && gem install git-rank-0.0.1.gem
 
 # Usage
 

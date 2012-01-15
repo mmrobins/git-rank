@@ -1,9 +1,5 @@
 #!/usr/bin/env ruby
 
-require 'optparse'
-require 'fileutils'
-require 'yaml'
-require 'digest/md5'
 require 'git-rank/log'
 require 'git-rank/blame'
 
@@ -23,14 +19,13 @@ end
 
 module GitRank
   class << self
-  def calculate(options = {})
-    authors = if options[:blame]
-      GitRank::Blame.calculate(options)
-    else
-      GitRank::Log.calculate(options)
+    def calculate(options = {})
+      authors = if options[:blame]
+        GitRank::Blame.calculate(options)
+      else
+        GitRank::Log.calculate(options)
+      end
+      authors
     end
-    authors
-  end
-
   end
 end

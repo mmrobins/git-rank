@@ -1,3 +1,5 @@
+require 'digest/md5'
+
 module GitRank
   module Blame
     class << self

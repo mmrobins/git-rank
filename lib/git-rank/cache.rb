@@ -1,3 +1,6 @@
+require 'yaml'
+require 'fileutils'
+
 module GitRank
   module Cache
     class << self
