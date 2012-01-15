@@ -17,7 +17,9 @@ Or you can build it as a gem yourself.  This is probably not recommended unless 
 
 # Usage
 
-See `git rank --help` for usage info
+See `git-rank --help` for usage info.  Note although most of the time you can
+use `git rank` without the dash to run the command, when asking for help you
+need the dash otherwise git tries to use the core code to look up help.
 
 # Credits
 

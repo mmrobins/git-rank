@@ -2,7 +2,7 @@ module GitRank::Options
   def self.parse
     options = {}
     OptionParser.new do |opts|
-      opts.banner = "Usage: git-rank-contributors-by-blame [options]"
+      opts.banner = "Usage: git-rank [options]"
 
       options[:exfile]  = []
       options[:exline]   = []
@@ -54,14 +54,14 @@ module GitRank::Options
 
         # Shows authors and how many lines they're
         # blamed for in all files in this directory
-        git-rank-contributors-by-blame
+        git-rank
 
         # Shows file breakdown for all authors
         # and excludes files in a few directories
-        git-rank-contributors-by-blame -z -x spec/fixtures -x vendor
+        git-rank -z -x spec/fixtures -x vendor
 
         # Shows file breakdown for just a few authors
-        git-rank-contributors-by-blame -a "Bob Johnson" -a prince
+        git-rank-contributors -a "Bob Johnson" -a prince
         HEREDOC
         exit
       end
