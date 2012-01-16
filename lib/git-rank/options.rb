@@ -9,9 +9,6 @@ module GitRank::Options
       options[:exfile]  = []
       options[:exline]   = []
       options[:exauthor] = []
-      options[:blame] = false
-      options[:additions_only] = false
-      options[:deletions_only] = false
 
       opts.on("-a", "--author [AUTHOR]", "Author breakdown by file") do |author|
         options[:author] ||= []
@@ -68,6 +65,15 @@ module GitRank::Options
         exit
       end
     end.parse!
+
+    if !ARGV.empty?
+      if ARGV.size == 1
+        options[:range] = ARGV.first
+      else
+        raise OptionParser::InvalidArgument, 'Only one range can be specified'
+      end
+    end
+
     options
   end
 end

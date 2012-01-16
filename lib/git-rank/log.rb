@@ -10,7 +10,7 @@ module GitRank
         author = nil
         file = nil
         state = :pre_author
-        git_log.each do |line|
+        git_log(options).each do |line|
           case
           when (state == :pre_author || state == :post_author) && line =~ /Author: (.*)\s</
             author = $1
@@ -30,8 +30,8 @@ module GitRank
 
       private
 
-      def git_log
-        `git log -M -C -C -w --no-color --numstat`
+      def git_log(options)
+        `git log -M -C -C -w --no-color --numstat #{options[:range]}`
       end
     end
   end

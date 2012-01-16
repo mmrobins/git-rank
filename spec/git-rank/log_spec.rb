@@ -32,5 +32,14 @@ describe GitRank::Log do
       authors = GitRank::Log.calculate
       authors.should == { "Matt Robinson"=> { 'foo' => 13, "bar" => 8 } }
     end
+
+    it "should put the range option into the git log" do
+      GitRank::Log.expects(:`).
+        with('git log -M -C -C -w --no-color --numstat abc123..123abc').
+        returns(log_output)
+
+      authors = GitRank::Log.calculate({:range => 'abc123..123abc'})
+      authors.should == { "Matt Robinson"=> { 'foo' => 13, "bar" => 8 } }
+    end
   end
 end
