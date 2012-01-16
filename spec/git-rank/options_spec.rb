@@ -12,13 +12,21 @@ describe GitRank::Options do
       :exauthor       => [],
     }}
 
+    def silently(&block)
+      warn_level = $VERBOSE
+      $VERBOSE = nil
+      result = block.call
+      $VERBOSE = warn_level
+      result
+    end
+
     it "should error if it gets more than one argument" do
-      ARGV = ['foo', 'bar']
+      silently { ARGV = ['foo', 'bar'] }
       expect { GitRank::Options.parse }.to raise_error(OptionParser::InvalidArgument, /Only one range/)
     end
 
     it "should turn a single argument into a range option" do
-      ARGV = ['foo']
+      silently { ARGV = ['foo'] }
       GitRank::Options.parse.should == default_opts.merge({:range => 'foo'})
     end
   end
