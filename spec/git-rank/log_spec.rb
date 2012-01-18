@@ -30,7 +30,10 @@ describe GitRank::Log do
       GitRank::Log.expects(:git_log).returns(log_output)
 
       authors = GitRank::Log.calculate
-      authors.should == { "Matt Robinson"=> { 'foo' => 13, "bar" => 8 } }
+      authors.should == { "Matt Robinson"=> {
+        'foo' => { :additions => 11, :deletions => 2, :total => 13, :net => 9 },
+        'bar' => { :additions => 5, :deletions => 3, :total => 8, :net => 2}
+      }}
     end
 
     it "should put the range option into the git log" do
@@ -39,7 +42,10 @@ describe GitRank::Log do
         returns(log_output)
 
       authors = GitRank::Log.calculate({:range => 'abc123..123abc'})
-      authors.should == { "Matt Robinson"=> { 'foo' => 13, "bar" => 8 } }
+      authors.should == { "Matt Robinson"=> {
+        'foo' => { :additions => 11, :deletions => 2, :total => 13, :net => 9 },
+        'bar' => { :additions => 5, :deletions => 3, :total => 8, :net => 2}
+      }}
     end
   end
 end

@@ -4,7 +4,7 @@ module GitRank
   module Log
     class << self
       def calculate(options = {})
-        authors = Hash.new {|h, k| h[k] = h[k] = Hash.new(0)}
+        authors = Hash.new {|h, k| h[k] = h[k] = Hash.new {|h, k| h[k] = Hash.new(0)}}
         options_digest = Digest::MD5.hexdigest(options[:additions_only].to_s + options[:deletions_only].to_s)
 
         author = nil
@@ -19,7 +19,10 @@ module GitRank
             additions = $1.to_i
             deletions = $2.to_i
             file = $3
-            authors[author][file] += (additions + deletions)
+            authors[author][file][:additions] += additions
+            authors[author][file][:deletions] += deletions
+            authors[author][file][:net]       += additions - deletions
+            authors[author][file][:total]     += additions + deletions
             state = :in_diff
           when state == :in_diff && line =~ /^commit /
             state = :pre_author

@@ -17,13 +17,18 @@ module GitRank
 
           max_author = authors.keys.max {|a,b| a.length <=> b.length }.length
 
-          authors.sort_by {|k, v| v.values.sum }.each do |author, line_counts|
+          sorted_authors = authors.sort_by {|k, v| v.values.inject(0) {|sum, counts| sum += counts[:total]} }
+          sorted_authors.each do |author, line_counts|
             padding = ' ' * (max_author - author.size)
 
-            puts "#{author}#{padding} #{line_counts.values.sum}"
+            total     = line_counts.values.inject(0) {|sum, counts| sum += counts[:total]}
+            additions = line_counts.values.inject(0) {|sum, counts| sum += counts[:additions]}
+            deletions = line_counts.values.inject(0) {|sum, counts| sum += counts[:deletions]}
+            puts "#{author}#{padding} #{total} (+#{additions} -#{deletions})"
 
             if options[:all_authors]
               print_author_breakdown(author, line_counts, max_author)
+              puts "#{author}#{padding} #{total} (+#{additions} -#{deletions})"
             end
           end
         end
@@ -34,11 +39,10 @@ module GitRank
       def print_author_breakdown(author_name, author_data, padding_size=nil)
         padding_size ||= author_name.size
         padding = ' ' * padding_size
-        total = author_data.values.sum
-        author_data.sort_by {|k, v| v }.each do |file, count|
-          puts "#{padding} #{count} #{file}"
+        total = author_data.values.inject(0) {|sum, counts| sum += counts[:total]}
+        author_data.sort_by {|k, v| v[:total] }.each do |file, count|
+          puts "#{padding} #{count[:total]} (+#{count[:additions]} -#{count[:deletions]}) #{file}"
         end
-        puts "#{author_name}#{' ' * (padding_size - author_name.size)} #{total}"
       end
 
       def delete_excluded_files(authors, excluded_files)
