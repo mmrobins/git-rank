@@ -15,20 +15,28 @@ module GitRank
         else
           authors.reject! {|k, v| options[:exauthor].include? k}
 
-          max_author = authors.keys.max {|a,b| a.length <=> b.length }.length
+          longest_author_name = authors.keys.max {|a,b| a.length <=> b.length }.length
 
           sorted_authors = authors.sort_by {|k, v| v.values.inject(0) {|sum, counts| sum += counts[:total]} }
           sorted_authors.each do |author, line_counts|
-            padding = ' ' * (max_author - author.size)
+            padding = ' ' * (longest_author_name - author.size + 1)
 
             total     = line_counts.values.inject(0) {|sum, counts| sum += counts[:total]}
             additions = line_counts.values.inject(0) {|sum, counts| sum += counts[:additions]}
             deletions = line_counts.values.inject(0) {|sum, counts| sum += counts[:deletions]}
-            puts "#{author}#{padding} #{total} (+#{additions} -#{deletions})"
+            output = "#{author}#{padding}" 
+            if options[:additions_only]
+              output << "+#{additions}"
+            elsif options[:deletions_only]
+              output << "-#{deletions}"
+            else
+              output << "#{total} (+#{additions} -#{deletions})"
+            end
+            puts output
 
             if options[:all_authors]
-              print_author_breakdown(author, line_counts, max_author)
-              puts "#{author}#{padding} #{total} (+#{additions} -#{deletions})"
+              print_author_breakdown(author, line_counts, longest_author_name, options)
+              puts output
             end
           end
         end
@@ -36,12 +44,19 @@ module GitRank
 
       private
 
-      def print_author_breakdown(author_name, author_data, padding_size=nil)
+      def print_author_breakdown(author_name, author_data, padding_size=nil, options = {})
         padding_size ||= author_name.size
-        padding = ' ' * padding_size
-        total = author_data.values.inject(0) {|sum, counts| sum += counts[:total]}
+        padding = ' ' * (padding_size + 1)
         author_data.sort_by {|k, v| v[:total] }.each do |file, count|
-          puts "#{padding} #{count[:total]} (+#{count[:additions]} -#{count[:deletions]}) #{file}"
+          output = "#{padding}"
+          if options[:additions_only]
+            output << "+#{count[:additions]}"
+          elsif options[:deletions_only]
+            output << "-#{count[:deletions]}"
+          else
+            output << "#{count[:total]} (+#{count[:additions]} -#{count[:deletions]})"
+          end
+          puts "#{output} #{file}"
         end
       end
 

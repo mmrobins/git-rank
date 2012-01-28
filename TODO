@@ -1,4 +1,3 @@
-make additions-only and deletions-only work for display
 get regexes working again
 get cached data working again
 display progress bar

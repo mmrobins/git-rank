@@ -22,19 +22,67 @@ describe GitRank::Printer do
     HEREDOC
   end
 
-  it "should print authors and files breakdown if all_authors options is true" do
-    out = capture_stdout { GitRank::Printer.print(author_info, :all_authors => true) }
+  it "should print additions only if specified" do
+    out = capture_stdout { GitRank::Printer.print(author_info, {:additions_only => true}) }
     out.should == <<-HEREDOC.gsub(/^      /, '')
-      Rob Mattinson 7 (+4 -3)
-                    3 (+2 -1) foo
-                    4 (+2 -2) bar
-      Rob Mattinson 7 (+4 -3)
-      Matt Robinson 13 (+4 -9)
-                    1 (+1 -0) foo
-                    2 (+0 -2) bar
-                    10 (+3 -7) baz
-      Matt Robinson 13 (+4 -9)
+      Rob Mattinson +4
+      Matt Robinson +4
     HEREDOC
+  end
+
+  it "should print deletions only if specified" do
+    out = capture_stdout { GitRank::Printer.print(author_info, {:deletions_only => true}) }
+    out.should == <<-HEREDOC.gsub(/^      /, '')
+      Rob Mattinson -3
+      Matt Robinson -9
+    HEREDOC
+  end
+
+  describe "when all_authors is specified" do
+    it "should print authors and files breakdown" do
+      out = capture_stdout { GitRank::Printer.print(author_info, :all_authors => true) }
+      out.should == <<-HEREDOC.gsub(/^        /, '')
+        Rob Mattinson 7 (+4 -3)
+                      3 (+2 -1) foo
+                      4 (+2 -2) bar
+        Rob Mattinson 7 (+4 -3)
+        Matt Robinson 13 (+4 -9)
+                      1 (+1 -0) foo
+                      2 (+0 -2) bar
+                      10 (+3 -7) baz
+        Matt Robinson 13 (+4 -9)
+      HEREDOC
+    end
+
+    it "should print additions_only" do
+      out = capture_stdout { GitRank::Printer.print(author_info, :all_authors => true, :additions_only => true) }
+      out.should == <<-HEREDOC.gsub(/^        /, '')
+        Rob Mattinson +4
+                      +2 foo
+                      +2 bar
+        Rob Mattinson +4
+        Matt Robinson +4
+                      +1 foo
+                      +0 bar
+                      +3 baz
+        Matt Robinson +4
+      HEREDOC
+    end
+
+    it "should print deletions_only" do
+      out = capture_stdout { GitRank::Printer.print(author_info, :all_authors => true, :deletions_only => true) }
+      out.should == <<-HEREDOC.gsub(/^        /, '')
+        Rob Mattinson -3
+                      -1 foo
+                      -2 bar
+        Rob Mattinson -3
+        Matt Robinson -9
+                      -0 foo
+                      -2 bar
+                      -7 baz
+        Matt Robinson -9
+      HEREDOC
+    end
   end
 
   it "should print with specified files excluded by regex" do
