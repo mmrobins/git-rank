@@ -10,7 +10,7 @@ module GitRank
         author = nil
         file = nil
         state = :pre_author
-        git_log(options).each do |line|
+        git_log(options).each_line do |line|
           case
           when (state == :pre_author || state == :post_author) && line =~ /Author: (.*)\s</
             author = $1

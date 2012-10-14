@@ -48,6 +48,7 @@ module GitRank
         padding_size ||= author_name.size
         padding = ' ' * (padding_size + 1)
         author_data.sort_by {|k, v| v[:total] }.each do |file, count|
+          next unless count[:total] > 100
           output = "#{padding}"
           if options[:additions_only]
             output << "+#{count[:additions]}"
