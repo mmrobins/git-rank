@@ -1,5 +1,7 @@
 git-rank
 
+https://travis-ci.org/mmrobins/git-rank.png
+
 Use to rank contributors to a git project by lines of conribution.  This can be
 done by blame lines for a current view of the project, or by log for a
 historical view.  Includes options for breakdown by file, excluding authors and
