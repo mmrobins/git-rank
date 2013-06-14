@@ -5,7 +5,7 @@ Gem::Specification.new do |s|
   s.description = "Use to rank contributors to a git project by lines of conribution"
   s.email = 'mattr@mattrobinson.net'
   s.executables = ['git-rank']
-  s.extra_rdoc_files = ['README']
+  s.extra_rdoc_files = ['README.md']
   s.files = `git ls-files`.split("\n")
   s.homepage = 'http://github.com/mmrobins/git-rank'
   s.rdoc_options = ['--charset=UTF-8']
